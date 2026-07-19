@@ -11,8 +11,9 @@ import type {
 import type { LLMConfig } from '@page-agent/llms'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { LMS_SYSTEM_INSTRUCTION, getLmsPageInstructions } from '../lms'
 import { MultiPageAgent } from './MultiPageAgent'
-import { DEMO_CONFIG, migrateLegacyEndpoint } from './constants'
+import { DEFAULT_CONFIG } from './constants'
 
 /** Language preference: undefined means follow system */
 export type LanguagePreference = SupportedLanguage | undefined
@@ -50,17 +51,12 @@ export function useAgent(): UseAgentResult {
 
 	useEffect(() => {
 		chrome.storage.local.get(['llmConfig', 'language', 'advancedConfig']).then((result) => {
-			let llmConfig = (result.llmConfig as LLMConfig) ?? DEMO_CONFIG
+			const llmConfig = (result.llmConfig as LLMConfig) ?? DEFAULT_CONFIG
 			const language = (result.language as SupportedLanguage) || undefined
 			const advancedConfig = (result.advancedConfig as AdvancedConfig) ?? {}
 
-			// Auto-migrate legacy testing endpoints
-			const migrated = migrateLegacyEndpoint(llmConfig)
-			if (migrated !== llmConfig) {
-				llmConfig = migrated
-				chrome.storage.local.set({ llmConfig: migrated })
-			} else if (!result.llmConfig) {
-				chrome.storage.local.set({ llmConfig: DEMO_CONFIG })
+			if (!result.llmConfig) {
+				chrome.storage.local.set({ llmConfig: DEFAULT_CONFIG })
 			}
 
 			setConfig({ ...llmConfig, ...advancedConfig, language })
@@ -73,7 +69,11 @@ export function useAgent(): UseAgentResult {
 		const { systemInstruction, ...agentConfig } = config
 		const agent = new MultiPageAgent({
 			...agentConfig,
-			instructions: systemInstruction ? { system: systemInstruction } : undefined,
+			instructions: {
+				// LMS domain knowledge always applies; user's extra instruction appends after it
+				system: [LMS_SYSTEM_INSTRUCTION, systemInstruction].filter(Boolean).join('\n\n'),
+				getPageInstructions: getLmsPageInstructions,
+			},
 		})
 		agentRef.current = agent
 

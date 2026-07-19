@@ -1,11 +1,11 @@
 {
     "extName": {
-        "message": "Page Agent Ext"
+        "message": "Codebasics Admin Copilot"
     },
     "extDescription": {
-        "message": "AI-powered browser automation assistant. Control web pages with natural language."
+        "message": "AI copilot for the Codebasics LMS admin panel. Operate the panel with natural language."
     },
     "extActionTitle": {
-        "message": "Open Page Agent"
+        "message": "Open Admin Copilot"
     }
 }
