@@ -1,30 +1,12 @@
 import type { LLMConfig } from '@page-agent/llms'
 
-// Demo LLM for testing
-export const DEMO_MODEL = 'qwen3.5-plus'
-export const DEMO_BASE_URL = 'https://page-ag-testing-ohftxirgbn.cn-shanghai.fcapp.run'
-// export const DEMO_API_KEY = 'NA'
+// Default LLM: Gemini via its OpenAI-compatible endpoint.
+// API key is entered by the user in the Settings view — never shipped in code.
+export const DEFAULT_MODEL = 'gemini-2.5-flash'
+// No trailing slash — the OpenAI-compatible client appends paths itself.
+export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
 
-export const DEMO_CONFIG: LLMConfig = {
-	baseURL: DEMO_BASE_URL,
-	model: DEMO_MODEL,
-	// apiKey: DEMO_API_KEY,
-}
-
-/** Legacy testing endpoints that should be auto-migrated to DEMO_BASE_URL */
-export const LEGACY_TESTING_ENDPOINTS = [
-	'https://hwcxiuzfylggtcktqgij.supabase.co/functions/v1/llm-testing-proxy',
-]
-
-export function isTestingEndpoint(url: string): boolean {
-	const normalized = url.replace(/\/+$/, '')
-	return normalized === DEMO_BASE_URL || LEGACY_TESTING_ENDPOINTS.some((ep) => normalized === ep)
-}
-
-export function migrateLegacyEndpoint(config: LLMConfig): LLMConfig {
-	const normalized = config.baseURL.replace(/\/+$/, '')
-	if (LEGACY_TESTING_ENDPOINTS.some((ep) => normalized === ep)) {
-		return { ...DEMO_CONFIG }
-	}
-	return config
+export const DEFAULT_CONFIG: LLMConfig = {
+	baseURL: DEFAULT_BASE_URL,
+	model: DEFAULT_MODEL,
 }

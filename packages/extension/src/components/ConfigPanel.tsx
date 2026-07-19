@@ -1,20 +1,8 @@
-import {
-	Copy,
-	CornerUpLeft,
-	ExternalLink,
-	Eye,
-	EyeOff,
-	FoldVertical,
-	HatGlasses,
-	Home,
-	Loader2,
-	Scale,
-	UnfoldVertical,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { CornerUpLeft, Eye, EyeOff, FoldVertical, Loader2, UnfoldVertical } from 'lucide-react'
+import { useState } from 'react'
 import { siGithub } from 'simple-icons'
 
-import { DEMO_BASE_URL, DEMO_MODEL, isTestingEndpoint } from '@/agent/constants'
+import { DEFAULT_BASE_URL, DEFAULT_MODEL } from '@/agent/constants'
 import type { ExtConfig, LanguagePreference } from '@/agent/useAgent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,8 +15,8 @@ interface ConfigPanelProps {
 }
 
 export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
-	const [baseURL, setBaseURL] = useState(config?.baseURL || DEMO_BASE_URL)
-	const [model, setModel] = useState(config?.model || DEMO_MODEL)
+	const [baseURL, setBaseURL] = useState(config?.baseURL || DEFAULT_BASE_URL)
+	const [model, setModel] = useState(config?.model || DEFAULT_MODEL)
 	const [apiKey, setApiKey] = useState(config?.apiKey)
 	const [language, setLanguage] = useState<LanguagePreference>(config?.language)
 	const [maxSteps, setMaxSteps] = useState(config?.maxSteps)
@@ -44,16 +32,13 @@ export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
 	)
 	const [advancedOpen, setAdvancedOpen] = useState(false)
 	const [saving, setSaving] = useState(false)
-	const [userAuthToken, setUserAuthToken] = useState('')
-	const [copied, setCopied] = useState(false)
-	const [showToken, setShowToken] = useState(false)
 	const [showApiKey, setShowApiKey] = useState(false)
 
 	const [prevConfig, setPrevConfig] = useState(config)
 	if (prevConfig !== config) {
 		setPrevConfig(config)
-		setBaseURL(config?.baseURL || DEMO_BASE_URL)
-		setModel(config?.model || DEMO_MODEL)
+		setBaseURL(config?.baseURL || DEFAULT_BASE_URL)
+		setModel(config?.model || DEFAULT_MODEL)
 		setApiKey(config?.apiKey)
 		setLanguage(config?.language)
 		setMaxSteps(config?.maxSteps)
@@ -61,38 +46,6 @@ export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
 		setExperimentalLlmsTxt(config?.experimentalLlmsTxt ?? false)
 		setExperimentalIncludeAllTabs(config?.experimentalIncludeAllTabs ?? false)
 		setDisableNamedToolChoice(config?.disableNamedToolChoice ?? false)
-	}
-
-	// Poll for user auth token every second until found
-	useEffect(() => {
-		let interval: NodeJS.Timeout | null = null
-
-		const fetchToken = async () => {
-			const result = await chrome.storage.local.get('PageAgentExtUserAuthToken')
-			const token = result.PageAgentExtUserAuthToken
-			if (typeof token === 'string' && token) {
-				setUserAuthToken(token)
-				if (interval) {
-					clearInterval(interval)
-					interval = null
-				}
-			}
-		}
-
-		fetchToken()
-		interval = setInterval(fetchToken, 1000)
-
-		return () => {
-			if (interval) clearInterval(interval)
-		}
-	}, [])
-
-	const handleCopyToken = async () => {
-		if (userAuthToken) {
-			await navigator.clipboard.writeText(userAuthToken)
-			setCopied(true)
-			setTimeout(() => setCopied(false), 2000)
-		}
 	}
 
 	const handleSave = async () => {
@@ -129,65 +82,6 @@ export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
 				</Button>
 			</div>
 
-			{/* User Auth Token Section */}
-			<div className="flex flex-col gap-1.5 p-3 bg-muted/50 rounded-md border">
-				<label htmlFor="user-auth-token" className="text-xs font-medium text-muted-foreground">
-					User Auth Token
-				</label>
-				<p className="text-[10px] text-muted-foreground mb-1">
-					Give a website the ability to call this extension.
-				</p>
-				<div className="flex gap-2 items-center">
-					<Input
-						id="user-auth-token"
-						readOnly
-						value={
-							userAuthToken
-								? showToken
-									? userAuthToken
-									: `${userAuthToken.slice(0, 4)}${'•'.repeat(userAuthToken.length - 8)}${userAuthToken.slice(-4)}`
-								: 'Loading...'
-						}
-						className="text-xs h-8 font-mono bg-background"
-					/>
-					<Button
-						variant="outline"
-						size="icon"
-						className="h-8 w-8 shrink-0 cursor-pointer"
-						onClick={() => setShowToken(!showToken)}
-						disabled={!userAuthToken}
-						aria-label={showToken ? 'Hide token' : 'Show token'}
-						aria-pressed={showToken}
-					>
-						{showToken ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-					</Button>
-					<Button
-						variant="outline"
-						size="icon"
-						className="h-8 w-8 shrink-0 cursor-pointer"
-						onClick={handleCopyToken}
-						disabled={!userAuthToken}
-						aria-label="Copy token"
-					>
-						{copied ? <span className="">✓</span> : <Copy className="size-3" />}
-					</Button>
-					<span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-						{copied ? 'Token copied' : ''}
-					</span>
-				</div>
-			</div>
-
-			{/* Hub link */}
-			<a
-				href="/hub.html"
-				target="_blank"
-				rel="noopener noreferrer"
-				className="flex items-center justify-between p-3 rounded-md border bg-muted/50 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-			>
-				Manage Page Agent Hub
-				<ExternalLink className="size-3" />
-			</a>
-
 			<div className="flex flex-col gap-1.5">
 				<label htmlFor="base-url" className="text-xs text-muted-foreground">
 					Base URL
@@ -200,22 +94,6 @@ export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
 					className="text-xs h-8"
 				/>
 			</div>
-
-			{/* Testing API notice */}
-			{isTestingEndpoint(baseURL) && (
-				<div className="p-2.5 rounded-md border border-amber-500/30 bg-amber-500/5 text-[11px] text-muted-foreground leading-relaxed">
-					<Scale className="size-3 inline-block mr-1 -mt-0.5 text-amber-600" />
-					You are using our testing API. By using this you agree to the{' '}
-					<a
-						href="https://github.com/alibaba/page-agent/blob/main/docs/terms-and-privacy.md"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="underline hover:text-foreground"
-					>
-						Terms of Use & Privacy Policy
-					</a>
-				</div>
-			)}
 
 			<div className="flex flex-col gap-1.5">
 				<label htmlFor="model" className="text-xs text-muted-foreground">
@@ -341,61 +219,22 @@ export function ConfigPanel({ config, onSave, onClose }: ConfigPanelProps) {
 			</div>
 
 			{/* Footer */}
-			<div className="mt-4 mb-4 pt-4 border-t border-border/50 flex gap-2 justify-between text-[10px] text-muted-foreground">
-				<div className="flex flex-col justify-between">
-					<span>
-						Version <span className="font-mono">v{__VERSION__}</span>
-					</span>
-
-					<a
-						href="https://github.com/alibaba/page-agent"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="flex items-center gap-1 hover:text-foreground"
-					>
-						<svg role="img" viewBox="0 0 24 24" className="size-3 fill-current">
-							<path d={siGithub.path} />
-						</svg>
-						<span>Source Code</span>
-					</a>
-				</div>
-
-				<div className="flex flex-col items-end">
-					<a
-						href="https://alibaba.github.io/page-agent/"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="flex items-center gap-1 hover:text-foreground"
-					>
-						<Home className="size-3" />
-						<span>Home Page</span>
-					</a>
-
-					<a
-						href="https://github.com/alibaba/page-agent/blob/main/docs/terms-and-privacy.md"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="flex items-center gap-1 hover:text-foreground"
-					>
-						<HatGlasses className="size-3" />
-						<span>Privacy</span>
-					</a>
-				</div>
-			</div>
-
-			{/* attribute */}
-			<div className="text-[10px] text-muted-foreground bg-background fixed bottom-0 w-full flex justify-around">
-				<span className="leading-loose">
-					Built with ♥️ by{' '}
-					<a
-						href="https://github.com/gaomeng1900"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="underline hover:text-foreground"
-					>
-						@Simon
-					</a>
+			<div className="mt-4 pt-4 border-t border-border/50 flex gap-2 justify-between text-[10px] text-muted-foreground">
+				<span>
+					Version <span className="font-mono">v{__VERSION__}</span>
 				</span>
+
+				<a
+					href="https://github.com/alibaba/page-agent"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="flex items-center gap-1 hover:text-foreground"
+				>
+					<svg role="img" viewBox="0 0 24 24" className="size-3 fill-current">
+						<path d={siGithub.path} />
+					</svg>
+					<span>Built on page-agent</span>
+				</a>
 			</div>
 		</div>
 	)
